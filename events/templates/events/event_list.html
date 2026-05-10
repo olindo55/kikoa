@@ -47,8 +47,8 @@
       </p>
       
       <div class="field">
-        <label>Tape le nom de l'événement pour confirmer :</label>
-        <input type="text" id="delete-confirm-input" placeholder="Nom de l'événement" autocomplete="off">
+        <label style="font-family: 'Inter', sans-serif;">Tape <strong style="color: var(--text); font-weight: 700;">{{ request.user.username }}/suivi</strong> du nom de l'événement pour confirmer :</label>
+        <input type="text" id="delete-confirm-input" placeholder="{{ request.user.username }}/nom-de-l-event" autocomplete="off">
       </div>
 
       <form id="delete-form" method="post" action="">
@@ -96,11 +96,14 @@ const deleteSubmitBtn = document.getElementById('delete-submit-btn');
 const deleteForm = document.getElementById('delete-form');
 const deleteDisplayName = document.getElementById('delete-event-display-name');
 
+const currentUsername = "{{ request.user.username }}";
+
 function openDeleteModal(id, name) {
     eventToDeleteName = name;
     deleteDisplayName.textContent = `« ${name} »`;
     deleteForm.action = `/events/${id}/delete/`;
     deleteInput.value = "";
+    deleteInput.placeholder = `${currentUsername}/${name}`;
     deleteSubmitBtn.disabled = true;
     deleteModal.classList.add('open');
     setTimeout(() => deleteInput.focus(), 100);
@@ -111,7 +114,8 @@ function closeDeleteModal() {
 }
 
 deleteInput.addEventListener('input', () => {
-    deleteSubmitBtn.disabled = deleteInput.value !== eventToDeleteName;
+    const expected = `${currentUsername}/${eventToDeleteName}`;
+    deleteSubmitBtn.disabled = deleteInput.value !== expected;
 });
 
 // Close modal on overlay click
