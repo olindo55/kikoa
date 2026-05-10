@@ -113,6 +113,7 @@ def accept_invitation(request, token):
                 if signup_form.is_valid():
                     user = signup_form.save()
                     participant.user = user
+                    participant.name = user.username
                     participant.save()
                     login(request, user)
                     return redirect("event_detail", pk=participant.event.pk)
@@ -121,6 +122,7 @@ def accept_invitation(request, token):
                 if login_form.is_valid():
                     user = login_form.get_user()
                     participant.user = user
+                    participant.name = user.username
                     participant.save()
                     login(request, user)
                     return redirect("event_detail", pk=participant.event.pk)
