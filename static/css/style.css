@@ -163,16 +163,22 @@ main { max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem; }
 
 /* ── MODALS ── */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(5,5,10,0.85);
+  position: fixed; inset: 0; background: rgba(43, 45, 66, 0.4);
   display: none; align-items: center; justify-content: center;
-  z-index: 100; backdrop-filter: blur(6px);
+  z-index: 100; backdrop-filter: blur(4px);
 }
 .modal-overlay.open { display: flex; }
 .modal {
-  background: #1c1c24; border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 18px; padding: 1.75rem; width: 100%; max-width: 440px; margin: 1rem;
-  animation: modalIn 0.2s ease;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: 2rem; width: 100%; max-width: 460px; margin: 1.5rem;
+  box-shadow: 0 10px 25px -5px rgba(43, 45, 66, 0.15), 0 8px 10px -6px rgba(43, 45, 66, 0.1);
+  animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: var(--text);
 }
+.modal input, .modal select { background: white; }
+.modal h2 { font-family: 'Fraunces', serif; font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text); }
+.modal .field label { color: var(--text); opacity: 0.8; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2rem; }
 @keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(8px); } to { opacity:1; transform:none; } }
 
 /* ── TOAST ── */
@@ -341,3 +347,14 @@ main { max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem; }
     .tabs { padding: 1rem 1rem 0; }
     .tab-panel { padding: 1.25rem 1rem; }
   }
+
+.split-chip {
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 0.4rem 0.8rem; border-radius: 12px; font-size: 0.85rem;
+  color: var(--muted); cursor: pointer; transition: all 0.2s;
+}
+.split-chip.selected {
+  background: rgba(255, 107, 107, 0.15); border-color: var(--primary);
+  color: var(--primary); font-weight: 600;
+}
+.split-selector { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
