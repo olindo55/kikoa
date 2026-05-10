@@ -25,7 +25,19 @@
   </div>
   
   {% if user.is_authenticated %}
-  <button class="burger-btn" onclick="toggleMenu()">☰</button>
+  <div class="header-menu-container" id="header-menu-container">
+    <button class="burger-btn" id="burger-btn" onclick="toggleMenu(event)">☰</button>
+    
+    <div class="desktop-dropdown" id="desktop-dropdown">
+      <div class="dropdown-user-info">👤 {{ request.user.username }}</div>
+      <div class="dropdown-divider"></div>
+      <a href="{% url 'event_list' %}" class="dropdown-link">🏠 Mes événements</a>
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="dropdown-link logout-btn">🚪 Déconnexion</button>
+      </form>
+    </div>
+  </div>
   
   <div class="mobile-menu" id="mobile-menu">
     <div class="mobile-menu-content">
@@ -50,10 +62,27 @@
 {% block content %}{% endblock %}
 
 <script>
-function toggleMenu() {
-  const menu = document.getElementById("mobile-menu");
-  if (menu) menu.classList.toggle("open");
+function toggleMenu(event) {
+  if (event) event.stopPropagation();
+  if (window.innerWidth > 600) {
+    const dropdown = document.getElementById("desktop-dropdown");
+    if (dropdown) dropdown.classList.toggle("open");
+  } else {
+    const menu = document.getElementById("mobile-menu");
+    if (menu) menu.classList.toggle("open");
+  }
 }
+
+// Close dropdown when clicking outside
+window.addEventListener('click', function(e) {
+  if (window.innerWidth > 600) {
+    const dropdown = document.getElementById("desktop-dropdown");
+    const container = document.getElementById("header-menu-container");
+    if (dropdown && dropdown.classList.contains('open') && !container.contains(e.target)) {
+      dropdown.classList.remove('open');
+    }
+  }
+});
 </script>
 {% block extra_js %}{% endblock %}
 </body>
