@@ -378,6 +378,39 @@
   </div>
 </div>
 
+<!-- ── MODAL: ITEM EDIT ── -->
+<div class="modal-overlay" id="item-modal">
+  <div class="modal">
+    <h2>🛒 Modifier l'article</h2>
+    <input type="hidden" id="edit-item-id">
+    <div class="field">
+      <label>Nom</label>
+      <input type="text" id="edit-i-name" placeholder="Article…">
+    </div>
+    <div class="field">
+      <label>Quantité</label>
+      <input type="text" id="edit-i-qty" placeholder="Ex: 2, 500g…">
+    </div>
+    <div class="field">
+      <label>Catégorie</label>
+      <select id="edit-i-cat">
+        <option value="food">🍽️ Nourriture</option>
+        <option value="drink">🥤 Boisson</option>
+        <option value="gear">🎒 Matériel</option>
+        <option value="other">📦 Autre</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Assigné à</label>
+      <select id="edit-i-assignee"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeItemModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveItemEdit()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── TOAST ── -->
 <div class="toast" id="toast"></div>
 
@@ -607,10 +640,60 @@ function renderItems() {
       ${item.quantity ? `<span class="item-qty">${esc(item.quantity)}</span>` : ""}
       <span class="cat-badge">${CAT_ICONS[item.category] || "📦"} ${CAT_LABELS[item.category] || ""}</span>
       ${a ? `<span class="chip" style="font-size:0.74rem;padding:0.18rem 0.5rem;background:${a.color}20;border:1px solid ${a.color}55;color:${a.color}">${esc(a.name)}</span>` : ""}
-      <button class="btn btn-danger" onclick="deleteItem(${item.id})">✕</button>
+      <button class="btn btn-ghost" onclick="openItemModal(${item.id})" style="padding:0.2rem 0.4rem; font-size:0.7rem;">✏️</button>
+      <button class="btn btn-danger" onclick="deleteItem(${item.id})" style="padding:0.2rem 0.4rem; font-size:0.7rem;">✕</button>
     `;
     list.appendChild(li);
   });
+}
+
+function openItemModal(itemId) {
+  const item = items.find(i => i.id === itemId);
+  if (!item) return;
+  
+  document.getElementById("edit-item-id").value = item.id;
+  document.getElementById("edit-i-name").value = item.name;
+  document.getElementById("edit-i-qty").value = item.quantity || "";
+  document.getElementById("edit-i-cat").value = item.category;
+  
+  const assigneeSelect = document.getElementById("edit-i-assignee");
+  assigneeSelect.innerHTML = `<option value="">— Non assigné —</option>` +
+    participants.map(p => `<option value="${p.id}" ${item.assignee === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join("");
+    
+  document.getElementById("item-modal").classList.add("open");
+}
+
+function closeItemModal() {
+  document.getElementById("item-modal").classList.remove("open");
+}
+
+async function saveItemEdit() {
+  const id = parseInt(document.getElementById("edit-item-id").value);
+  const name = document.getElementById("edit-i-name").value.trim();
+  const quantity = document.getElementById("edit-i-qty").value.trim();
+  const category = document.getElementById("edit-i-cat").value;
+  const assignee = parseInt(document.getElementById("edit-i-assignee").value) || null;
+  
+  if (!name) {
+    toast("Le nom est obligatoire", true);
+    return;
+  }
+  
+  try {
+    const updated = await api(`${API}/items/${id}/`, "PATCH", {
+      name, quantity, category, assignee
+    });
+    const item = items.find(i => i.id === id);
+    if (item) {
+      Object.assign(item, updated);
+      item.assignee_detail = participants.find(p => p.id === item.assignee) || null;
+      renderItems();
+      closeItemModal();
+      toast("Article mis à jour ✓");
+    }
+  } catch(e) {
+    toast("Erreur lors de la mise à jour", true);
+  }
 }
 
 // ── EXPENSES ──────────────────────────────────────────────────────────────────
@@ -744,6 +827,9 @@ async function loadBalance() {
 // Close modal on overlay click
 document.getElementById("exp-modal").addEventListener("click", function(e) {
   if (e.target === this) closeExpenseModal();
+});
+document.getElementById("item-modal").addEventListener("click", function(e) {
+  if (e.target === this) closeItemModal();
 });
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
