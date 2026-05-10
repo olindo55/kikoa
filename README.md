@@ -30,25 +30,32 @@ python3 -m venv venv
 source venv/bin/activate
 
 # Installation des dépendances
-pip install django djangorestframework gunicorn
+pip install django djangorestframework gunicorn python-dotenv
 ```
 
-### 3. Configuration de Django
+### 3. Configuration de l'environnement
 
-Éditez le fichier `Kikoa/settings.py` :
+Créez un fichier `.env` à la racine du projet en vous basant sur l'exemple :
 
-*   `DEBUG = False`
-*   `ALLOWED_HOSTS = ['votre_ip_vps', 'votre_domaine.com']`
-*   Configurez le dossier statique : `STATIC_ROOT = BASE_DIR / "staticfiles"`
+```bash
+cp .env.example .env
+nano .env
+```
 
-Préparez la base de données et les fichiers :
+Modifiez les valeurs suivantes dans le fichier `.env` :
+
+*   `DEBUG=False`
+*   `SECRET_KEY=votre_cle_secrete_generee`
+*   `ALLOWED_HOSTS=votre_ip_vps,votre_domaine.com`
+
+### 4. Configuration de Django
 
 ```bash
 python manage.py collectstatic --noinput
 python manage.py migrate
 ```
 
-### 4. Configuration de Gunicorn
+### 5. Configuration de Gunicorn
 
 Créez un service systemd pour Gunicorn : `sudo nano /etc/systemd/system/kikoa.service`
 
@@ -73,7 +80,7 @@ sudo systemctl start kikoa
 sudo systemctl enable kikoa
 ```
 
-### 5. Configuration de Nginx (Proxy Inverse)
+### 6. Configuration de Nginx (Proxy Inverse)
 
 Créez le fichier de configuration : `sudo nano /etc/nginx/sites-available/kikoa`
 
@@ -100,7 +107,7 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-### 6. Permissions SQLite (Crucial)
+### 7. Permissions SQLite (Crucial)
 
 Pour que SQLite fonctionne, l'utilisateur `www-data` doit pouvoir écrire dans le fichier de base de données **et** dans le dossier parent :
 
