@@ -52,7 +52,7 @@ body {
 .btn-danger:hover { background: rgba(224,96,96,0.25); }
 .btn-danger:disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
 
-input[type="text"], input[type="date"], input[type="number"], input[type="password"], select, textarea {
+input[type="text"], input[type="email"], input[type="date"], input[type="number"], input[type="password"], select, textarea {
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 10px;
