@@ -8,10 +8,10 @@
 <div class="event-sub-header">
   <div class="header-title">
     <span class="event-emoji">{{ event.emoji }}</span>
-    <div style="display: flex; flex-direction: column;">
-      <span id="header-event-name">{{ event.name }}</span>
+    <div style="display: flex; flex-direction: column; min-width: 0;">
+      <span id="header-event-name" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ event.name }}</span>
       {% if event.description %}
-      <span class="event-description-sub">{{ event.description }}</span>
+      <span class="event-description-sub" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ event.description }}</span>
       {% endif %}
     </div>
   </div>
@@ -430,16 +430,39 @@ function renderItems() {
     const li = document.createElement("li");
     li.className = "item-row" + (item.done ? " done" : "");
     li.innerHTML = `
-      <div class="item-check ${item.done ? "checked" : ""}" onclick="toggleItem(${item.id})">${item.done ? "✓" : ""}</div>
-      <span class="item-name">${esc(item.name)} ${item.quantity ? `<span class="item-qty">(${esc(item.quantity)})</span>` : ""}</span>
-      <span class="cat-badge">${CAT_ICONS[item.category] || "📦"} ${CAT_LABELS[item.category] || ""}</span>
-      ${a ? `<span class="chip" style="font-size:0.74rem;padding:0.18rem 0.5rem;background:${a.color}20;border:1px solid ${a.color}55;color:${a.color}">${esc(a.name)}</span>` : ""}
-      <button class="btn btn-ghost" onclick="openItemModal(${item.id})" style="padding:0.2rem 0.4rem; font-size:0.7rem;">✏️</button>
-      <button class="btn btn-danger" onclick="deleteItem(${item.id})" style="padding:0.2rem 0.4rem; font-size:0.7rem;">✕</button>
+      <div class="item-main">
+        <div class="item-check ${item.done ? "checked" : ""}" onclick="toggleItem(${item.id}); event.stopPropagation();">${item.done ? "✓" : ""}</div>
+        <span class="item-name">${esc(item.name)}${item.quantity ? ` <span class="item-qty-inline">(${esc(item.quantity)})</span>` : ""}</span>
+        <div class="item-main-right" style="margin-left:auto; display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
+          ${a ? `<span class="chip" style="font-size:0.68rem; padding:0.15rem 0.45rem; background:${a.color}20; border:1px solid ${a.color}55; color:${a.color}">${esc(a.name)}</span>` : ""}
+          <span class="cat-badge" title="${CAT_LABELS[item.category] || ""}">${CAT_ICONS[item.category] || "📦"} <span>${CAT_LABELS[item.category] || ""}</span></span>
+          <div class="item-more-container">
+            <button class="item-more-btn" onclick="toggleItemMenu(${item.id}); event.stopPropagation();">⋮</button>
+            <div class="item-dropdown" id="item-menu-${item.id}">
+              <button onclick="openItemModal(${item.id}); closeAllItemMenus(); event.stopPropagation();">✏️ Modifier</button>
+              <button class="danger" onclick="deleteItem(${item.id}); closeAllItemMenus(); event.stopPropagation();">🗑 Supprimer</button>
+            </div>
+          </div>
+        </div>
+      </div>
     `;
     list.appendChild(li);
   });
 }
+
+function toggleItemMenu(id) {
+  const menu = document.getElementById(`item-menu-${id}`);
+  const isOpen = menu.classList.contains('open');
+  closeAllItemMenus();
+  if (!isOpen) menu.classList.add('open');
+}
+
+function closeAllItemMenus() {
+  document.querySelectorAll('.item-dropdown').forEach(m => m.classList.remove('open'));
+}
+
+// Close menus on click outside
+document.addEventListener('click', () => closeAllItemMenus());
 
 function openItemModal(itemId) {
   const item = items.find(i => i.id === itemId);
@@ -561,17 +584,27 @@ function renderExpenses() {
     ).join("");
     const row = document.createElement("div");
     row.className = "expense-row";
+    row.onclick = function(e) {
+      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+      this.classList.toggle('open');
+    };
     row.innerHTML = `
-      <div class="expense-amount"><sup>€</sup>${parseFloat(exp.amount).toFixed(2)}</div>
-      <div class="expense-info">
-        <div class="expense-label">${esc(exp.label)}</div>
-        <div class="expense-meta">
-          ${payer ? `<span style="color:${payer.color}">Payé par <strong>${esc(payer.name)}</strong></span> ·` : ""}
-          <span>${split.length} pers. · <strong>€${perP}/pers.</strong></span>
+      <div class="expense-main">
+        <div class="expense-amount"><sup>€</sup>${parseFloat(exp.amount).toFixed(2)}</div>
+        <div class="expense-info">
+          <div class="expense-label">${esc(exp.label)}</div>
+          <div class="expense-meta">
+            ${payer ? `<span style="color:${payer.color}">Payé par <strong>${esc(payer.name)}</strong></span> ·` : ""}
+            <span>${split.length} pers. · <strong>€${perP}/pers.</strong></span>
+          </div>
         </div>
+        <div class="expense-arrow-inline">›</div>
+        <button class="btn btn-danger" onclick="deleteExpense(${exp.id})" style="padding: 0.3rem 0.6rem; margin-left: 0.5rem;">✕</button>
+      </div>
+      <div class="expense-details">
+        <div style="font-size: 0.72rem; color: var(--muted); margin-bottom: 0.4rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;">Partagé avec :</div>
         <div class="split-row">${chips}</div>
       </div>
-      <button class="btn btn-danger" onclick="deleteExpense(${exp.id})">✕</button>
     `;
     list.appendChild(row);
   });
@@ -588,12 +621,30 @@ async function loadBalance() {
       const cls = b.net > 0.005 ? "pos" : b.net < -0.005 ? "neg" : "zero";
       const sign = b.net > 0.005 ? "+" : "";
       const lbl = cls === "pos" ? "à recevoir" : cls === "neg" ? "à rembourser" : "équilibré ✓";
+      
+      const p = participants.find(p => p.id === b.id);
+      const paid = expenses.filter(e => e.payer === b.id).reduce((sum, e) => sum + parseFloat(e.amount), 0);
+      const consumed = expenses.reduce((sum, e) => {
+        const split = e.split_with || [];
+        if (split.includes(b.id)) return sum + (parseFloat(e.amount) / split.length);
+        return sum;
+      }, 0);
+
       const card = document.createElement("div");
       card.className = "balance-card";
+      card.onclick = function() { this.classList.toggle('open'); };
       card.innerHTML = `
         <div class="balance-name">${esc(b.name)}</div>
         <div class="balance-amount ${cls}">${sign}${b.net.toFixed(2)} €</div>
         <div class="balance-label">${lbl}</div>
+        <div class="balance-details">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span>Payé :</span> <strong>${paid.toFixed(2)} €</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Dû :</span> <strong>${consumed.toFixed(2)} €</strong>
+          </div>
+        </div>
       `;
       grid.appendChild(card);
     });
