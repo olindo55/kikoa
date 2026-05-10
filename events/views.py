@@ -135,8 +135,11 @@ class ParticipantViewSet(viewsets.ModelViewSet):
         ).distinct()
 
     def perform_create(self, serializer):
-        event = Event.objects.get(
-            models.Q(owner=self.request.user) | models.Q(participants__user=self.request.user),
+        from django.shortcuts import get_object_or_404
+        event = get_object_or_404(
+            Event.objects.filter(
+                models.Q(owner=self.request.user) | models.Q(participants__user=self.request.user)
+            ),
             pk=self.kwargs["event_pk"]
         )
         serializer.save(event=event)
@@ -155,8 +158,11 @@ class ShoppingItemViewSet(viewsets.ModelViewSet):
         ).select_related("assignee").distinct()
 
     def perform_create(self, serializer):
-        event = Event.objects.get(
-            models.Q(owner=self.request.user) | models.Q(participants__user=self.request.user),
+        from django.shortcuts import get_object_or_404
+        event = get_object_or_404(
+            Event.objects.filter(
+                models.Q(owner=self.request.user) | models.Q(participants__user=self.request.user)
+            ),
             pk=self.kwargs["event_pk"]
         )
         serializer.save(event=event)
@@ -175,8 +181,11 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         ).select_related("payer").prefetch_related("split_with").distinct()
 
     def perform_create(self, serializer):
-        event = Event.objects.get(
-            models.Q(owner=self.request.user) | models.Q(participants__user=self.request.user),
+        from django.shortcuts import get_object_or_404
+        event = get_object_or_404(
+            Event.objects.filter(
+                models.Q(owner=self.request.user) | models.Q(participants__user=self.request.user)
+            ),
             pk=self.kwargs["event_pk"]
         )
         serializer.save(event=event)
