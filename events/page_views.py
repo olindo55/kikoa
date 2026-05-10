@@ -63,6 +63,18 @@ def signup(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+            
+            # If the user was linked to a participant during login (via signal),
+            # redirect them to the event detail instead of the list.
+            invitation_token = request.session.get('invitation_token_used')
+            if invitation_token:
+                try:
+                    participant = Participant.objects.get(invitation_token=invitation_token, user=user)
+                    del request.session['invitation_token_used']
+                    return redirect("event_detail", pk=participant.event.pk)
+                except Participant.DoesNotExist:
+                    pass
+
             return redirect("event_list")
     else:
         form = UserSignupForm()
@@ -73,6 +85,10 @@ def signup(request):
 def accept_invitation(request, token):
     """Page to accept an invitation and create a profile or login."""
     participant = get_object_or_404(Participant, invitation_token=token)
+    
+    # Store token in session for general signup/login
+    request.session['invitation_token'] = str(token)
+    request.session.modified = True
     
     if participant.user:
         # Invitation already accepted
