@@ -1,0 +1,753 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kikoa — {{ event.name }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFF6DE;
+    --surface: #FFE394;
+    --surface2: #f7e8c3;
+    --border: rgba(0,0,0,0.08);
+    --accent: #8BDFDD;
+    --accent2: #F48F68;
+    --text: #2D2D2D;
+    --muted: #6B6B6B;
+    --green: #56c479;
+    --red: #F48F68;
+    --gold: #f7c56a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 10% 0%, rgba(139,223,221,0.15) 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 100%, rgba(244,143,104,0.1) 0%, transparent 50%);
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 1.25rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+  .back-btn {
+    color: var(--muted); text-decoration: none; font-size: 0.85rem;
+    display: flex; align-items: center; gap: 0.3rem;
+    transition: color 0.15s;
+  }
+  .back-btn:hover { color: var(--text); }
+  .header-title {
+    font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .header-title .event-emoji { font-size: 1.3rem; }
+  .header-right { margin-left: auto; font-size: 0.8rem; color: var(--muted); }
+  .header-right a { color: var(--accent); text-decoration: none; }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; gap: 0.2rem;
+    padding: 1.25rem 2rem 0;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tab-btn {
+    background: none; border: none;
+    padding: 0.65rem 1.2rem;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500;
+    color: var(--muted); cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.2s; position: relative;
+    display: flex; align-items: center; gap: 0.4rem; white-space: nowrap;
+  }
+  .tab-btn.active { color: var(--text); background: rgba(139,223,221,0.2); }
+  .tab-btn.active::after {
+    content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 2px; background: var(--accent); border-radius: 2px 2px 0 0;
+  }
+  .badge {
+    background: var(--accent); color: white;
+    font-size: 0.65rem; font-weight: 600;
+    padding: 0.12rem 0.38rem; border-radius: 10px; min-width: 18px; text-align: center;
+  }
+
+  /* ── LAYOUT ── */
+  .tab-panel { display: none; max-width: 900px; margin: 0 auto; padding: 2rem; }
+  .tab-panel.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.4rem; margin-bottom: 1.25rem;
+  }
+  .card-title {
+    font-size: 0.8rem; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 1rem; display: flex; align-items: center; gap: 0.4rem;
+  }
+  .card-title::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+
+  /* ── INPUTS ── */
+  .input-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  input[type="text"], input[type="number"], input[type="date"], select {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 9px; padding: 0.6rem 0.85rem;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--text);
+    outline: none; transition: border-color 0.2s; flex: 1; min-width: 110px;
+  }
+  input::placeholder { color: var(--muted); }
+  input:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+
+  .btn {
+    padding: 0.6rem 1.2rem; border: none; border-radius: 9px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 0.3rem;
+  }
+  .btn-primary { background: var(--accent); color: var(--text); }
+  .btn-primary:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(139,223,221,0.5); }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.07); }
+  .btn-danger { background: rgba(224,96,96,0.1); color: var(--red); border: 1px solid rgba(224,96,96,0.18); padding: 0.3rem 0.55rem; font-size: 0.78rem; }
+  .btn-danger:hover { background: rgba(224,96,96,0.22); }
+  .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.78rem; }
+
+  /* ── CHIPS (participants) ── */
+  .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.75rem; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.3rem 0.7rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500;
+  }
+  .chip-remove { cursor: pointer; opacity: 0.55; font-size: 0.72rem; transition: opacity 0.15s; }
+  .chip-remove:hover { opacity: 1; }
+
+  /* ── ITEM LIST ── */
+  .item-list { list-style: none; }
+  .item-row {
+    display: flex; align-items: center; gap: 0.65rem;
+    padding: 0.65rem 0.8rem; border-radius: 9px; margin-bottom: 0.35rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    animation: fadeIn 0.18s ease;
+  }
+  .item-row.done { opacity: 0.4; }
+  .item-row.done .item-name { text-decoration: line-through; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+
+  .item-check {
+    width: 19px; height: 19px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.2); cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s; font-size: 0.65rem;
+  }
+  .item-check:hover { border-color: var(--green); }
+  .item-check.checked { background: var(--green); border-color: var(--green); }
+  .item-name { flex: 1; font-size: 0.88rem; }
+  .item-qty { font-size: 0.78rem; color: var(--muted); }
+  .cat-badge {
+    font-size: 0.72rem; padding: 0.15rem 0.5rem;
+    border-radius: 10px; background: var(--surface);
+    border: 1px solid var(--border); color: var(--muted);
+  }
+
+  /* ── FILTER PILLS ── */
+  .filter-row { display: flex; gap: 0.4rem; margin-bottom: 0.85rem; flex-wrap: wrap; }
+  .filter-pill {
+    padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.78rem; font-weight: 500;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer; transition: all 0.15s;
+  }
+  .filter-pill.active { background: rgba(124,106,247,0.12); border-color: var(--accent); color: var(--accent); }
+
+  /* ── EXPENSE ROWS ── */
+  .expense-row {
+    display: flex; align-items: flex-start; gap: 0.9rem;
+    padding: 0.9rem 1rem; border-radius: 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+    margin-bottom: 0.5rem; animation: fadeIn 0.18s ease;
+  }
+  .expense-amount {
+    font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 700;
+    color: var(--gold); min-width: 65px; flex-shrink: 0;
+  }
+  .expense-amount sup { font-size: 0.7rem; font-family: 'DM Sans', sans-serif; color: var(--muted); }
+  .expense-info { flex: 1; }
+  .expense-label { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.2rem; }
+  .expense-meta { font-size: 0.76rem; color: var(--muted); display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .split-row { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.35rem; }
+
+  /* ── BALANCE ── */
+  .balance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 0.65rem; margin-bottom: 1.25rem; }
+  .balance-card {
+    padding: 0.9rem; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--surface2); text-align: center;
+  }
+  .balance-name { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.25rem; }
+  .balance-amount { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 700; }
+  .balance-amount.pos { color: var(--green); }
+  .balance-amount.neg { color: var(--red); }
+  .balance-amount.zero { color: var(--muted); }
+  .balance-label { font-size: 0.7rem; color: var(--muted); margin-top: 0.15rem; }
+
+  .settlement-row {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.7rem 0.9rem; border-radius: 9px;
+    background: var(--surface2); border: 1px solid var(--border);
+    font-size: 0.85rem; margin-bottom: 0.4rem;
+  }
+  .settle-arrow { color: var(--accent); font-size: 1rem; }
+  .settle-amount { font-weight: 700; color: var(--gold); margin-left: auto; }
+
+  /* ── EMPTY ── */
+  .empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); font-size: 0.88rem; line-height: 1.7; }
+  .empty .icon { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(5,5,10,0.85);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; backdrop-filter: blur(6px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #1c1c24; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 18px; padding: 1.75rem; width: 100%; max-width: 440px; margin: 1rem;
+    animation: modalIn 0.2s ease;
+  }
+  @keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(8px); } to { opacity:1; transform:none; } }
+  .modal h2 { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 800; margin-bottom: 1.25rem; }
+  .field { margin-bottom: 0.9rem; }
+  .field label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+  .field input, .field select { width: 100%; }
+  .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.1rem; }
+
+  .split-selector { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
+  .split-chip {
+    padding: 0.28rem 0.65rem; border-radius: 20px;
+    border: 1px solid var(--border); font-size: 0.78rem;
+    cursor: pointer; background: transparent; color: var(--muted);
+    font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+  }
+  .split-chip.selected { border-color: var(--accent); color: var(--accent); background: rgba(124,106,247,0.1); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0.7rem 1.1rem; font-size: 0.84rem;
+    opacity: 0; transform: translateY(8px); transition: all 0.22s; z-index: 200;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: none; }
+  .toast.err { border-color: var(--red); color: var(--red); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    header { padding: 1rem; }
+    .tabs { padding: 1rem 1rem 0; }
+    .tab-panel { padding: 1.25rem 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="{% url 'event_list' %}" class="back-btn">← Mes événements</a>
+  <div class="header-title">
+    <span class="event-emoji">{{ event.emoji }}</span>
+    <span id="header-event-name">{{ event.name }}</span>
+  </div>
+  <div class="header-right">
+    {{ request.user.username }} · 
+    <form method="post" action="{% url 'logout' %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" style="background:none; border:none; color:var(--accent); text-decoration:none; cursor:pointer; font-family:inherit; font-size:inherit; padding:0;">Déconnexion</button>
+    </form>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('participants', this)">
+    👥 Participants <span class="badge" id="bdg-p">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('items', this)">
+    🛒 Liste <span class="badge" id="bdg-i">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('expenses', this)">
+    💸 Dépenses <span class="badge" id="bdg-e">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('balance', this)">
+    ⚖️ Balance
+  </button>
+</div>
+
+<!-- ── TAB: PARTICIPANTS ── -->
+<div id="tab-participants" class="tab-panel active">
+  <div class="card">
+    <div class="card-title">Ajouter un participant</div>
+    <div class="input-row">
+      <input type="text" id="p-name" placeholder="Prénom (ex: Marie, Lucas…)" onkeydown="if(event.key==='Enter') addParticipant()">
+      <button class="btn btn-primary" onclick="addParticipant()">+ Ajouter</button>
+    </div>
+    <p style="font-size: 0.75rem; color: var(--muted); margin-top: 0.8rem; line-height: 1.4;">
+      💡 Une fois ajouté, clique sur le badge du participant pour copier son <strong>lien d'invitation personnel</strong> et lui envoyer.
+    </p>
+    <div class="chips" id="p-chips"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Comment ça marche</div>
+    <div style="font-size:0.87rem; color:var(--muted); line-height:1.8;">
+      <p>👥 <strong style="color:var(--text)">Participants</strong> — Ajoute toutes les personnes concernées.</p>
+      <p>🛒 <strong style="color:var(--text)">Liste</strong> — Crée la liste de courses et assigne chaque article.</p>
+      <p>💸 <strong style="color:var(--text)">Dépenses</strong> — Enregistre qui a payé quoi et avec qui c'est partagé.</p>
+      <p>⚖️ <strong style="color:var(--text)">Balance</strong> — Vois exactement qui rembourse qui, optimisé.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── TAB: ITEMS ── -->
+<div id="tab-items" class="tab-panel">
+  <div class="card">
+    <div class="card-title">Nouvel article</div>
+    <div class="input-row">
+      <input type="text" id="i-name" placeholder="Article…" style="flex:2" onkeydown="if(event.key==='Enter') addItem()">
+      <input type="text" id="i-qty" placeholder="Qté" style="flex:0.7; min-width:70px">
+      <select id="i-cat" style="flex:1; min-width:110px">
+        <option value="food">🍽️ Nourriture</option>
+        <option value="drink">🥤 Boisson</option>
+        <option value="gear">🎒 Matériel</option>
+        <option value="other">📦 Autre</option>
+      </select>
+      <select id="i-assignee" style="flex:1; min-width:120px">
+        <option value="">— Assigné à —</option>
+      </select>
+      <button class="btn btn-primary" onclick="addItem()">+ Ajouter</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Liste de courses</div>
+    <div class="filter-row">
+      <span class="filter-pill active" id="f-all" onclick="setFilter('all', this)">Tout</span>
+      <span class="filter-pill" id="f-todo" onclick="setFilter('todo', this)">À faire</span>
+      <span class="filter-pill" id="f-done" onclick="setFilter('done', this)">✓ Fait</span>
+    </div>
+    <ul class="item-list" id="item-list"></ul>
+  </div>
+</div>
+
+<!-- ── TAB: EXPENSES ── -->
+<div id="tab-expenses" class="tab-panel">
+  <div class="card" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem;">
+    <div class="card-title" style="margin-bottom:0">Dépenses partagées</div>
+    <button class="btn btn-primary" onclick="openExpenseModal()">+ Nouvelle dépense</button>
+  </div>
+  <div class="card">
+    <div id="expense-list"></div>
+  </div>
+</div>
+
+<!-- ── TAB: BALANCE ── -->
+<div id="tab-balance" class="tab-panel">
+  <div class="card">
+    <div class="card-title">Solde par personne</div>
+    <div class="balance-grid" id="balance-grid"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Remboursements à effectuer</div>
+    <div id="settlements"></div>
+  </div>
+</div>
+
+<!-- ── MODAL: EXPENSE ── -->
+<div class="modal-overlay" id="exp-modal">
+  <div class="modal">
+    <h2>💸 Nouvelle dépense</h2>
+    <div class="field"><label>Description</label><input type="text" id="exp-label" placeholder="Ex: Courses Lidl, location ski…"></div>
+    <div class="field"><label>Montant (€)</label><input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="field"><label>Payé par</label><select id="exp-payer"></select></div>
+    <div class="field"><label>Partagé entre</label><div class="split-selector" id="exp-split"></div></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeExpenseModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveExpense()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const EVENT_ID = {{ event.id }};
+const CSRF = "{{ csrf_token }}";
+const API = `/api/events/${EVENT_ID}`;
+
+// Palette — each new participant gets the next color
+const PALETTE = [
+  ["#7c6af7","#fff"], ["#f7a26a","#1a1a18"], ["#56c479","#fff"],
+  ["#f7c56a","#1a1a18"], ["#e06060","#fff"], ["#6ac8f7","#1a1a18"],
+  ["#c46af7","#fff"], ["#6af7c4","#1a1a18"],
+];
+
+const CAT_ICONS = { food:"🍽️", drink:"🥤", gear:"🎒", other:"📦" };
+const CAT_LABELS = { food:"Nourriture", drink:"Boisson", gear:"Matériel", other:"Autre" };
+
+// Local cache
+let participants = [];
+let items = [];
+let expenses = [];
+let itemFilter = "all";
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+function toast(msg, err = false) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = "toast show" + (err ? " err" : "");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = "toast", 2600);
+}
+
+async function api(url, method = "GET", body = null) {
+  const opts = {
+    method,
+    headers: { "Content-Type": "application/json", "X-CSRFToken": CSRF },
+    credentials: "same-origin",
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(JSON.stringify(detail));
+  }
+  return method === "DELETE" ? null : res.json();
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll(".tab-panel").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+  document.getElementById("tab-" + id).classList.add("active");
+  btn.classList.add("active");
+  if (id === "items") refreshAssigneeSelect();
+  if (id === "balance") loadBalance();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const ev = await api(`${API}/`);
+    participants = ev.participants || [];
+    items = ev.items || [];
+    expenses = ev.expenses || [];
+    render();
+  } catch(e) {
+    console.error(e);
+    toast("Erreur de chargement", true);
+  }
+}
+
+function render() {
+  renderParticipants();
+  renderItems();
+  renderExpenses();
+  updateBadges();
+  refreshAssigneeSelect();
+}
+
+function updateBadges() {
+  document.getElementById("bdg-p").textContent = participants.length;
+  document.getElementById("bdg-i").textContent = items.filter(i => !i.done).length;
+  document.getElementById("bdg-e").textContent = expenses.length;
+}
+
+// ── PARTICIPANTS ──────────────────────────────────────────────────────────────
+async function addParticipant() {
+  const inp = document.getElementById("p-name");
+  const name = inp.value.trim();
+  if (!name) return;
+  const [color, textColor] = PALETTE[participants.length % PALETTE.length];
+  try {
+    const p = await api(`${API}/participants/`, "POST", { name, color, text_color: textColor });
+    participants.push(p);
+    inp.value = "";
+    renderParticipants();
+    refreshAssigneeSelect();
+    updateBadges();
+    toast(`${p.name} ajouté ✓`);
+  } catch(e) { toast("Erreur lors de l'ajout", true); }
+}
+
+async function removeParticipant(id) {
+  try {
+    await api(`${API}/participants/${id}/`, "DELETE");
+    participants = participants.filter(p => p.id !== id);
+    renderParticipants();
+    refreshAssigneeSelect();
+    renderItems();
+    updateBadges();
+  } catch(e) { toast("Erreur", true); }
+}
+
+function renderParticipants() {
+  const el = document.getElementById("p-chips");
+  el.innerHTML = "";
+  if (!participants.length) {
+    el.innerHTML = `<span style="font-size:0.82rem;color:var(--muted)">Aucun participant pour l'instant.</span>`;
+    return;
+  }
+  participants.forEach(p => {
+    const chip = document.createElement("div");
+    chip.className = "chip";
+    chip.style.cssText = `background:${p.color}20;border:1px solid ${p.color}55;color:${p.color};cursor:pointer;`;
+    
+    let content = `<span>${esc(p.name)}</span>`;
+    if (p.user) {
+      content += `<span style="margin-left:5px;opacity:0.6" title="Profil créé">👤</span>`;
+    }
+    content += `<span class="chip-remove" onclick="removeParticipant(${p.id}); event.stopPropagation();">✕</span>`;
+    chip.innerHTML = content;
+    
+    if (p.invitation_url) {
+      chip.onclick = () => {
+        navigator.clipboard.writeText(p.invitation_url);
+        toast(`Lien d'invitation copié pour ${p.name} !`);
+      };
+      chip.title = "Clique pour copier le lien d'invitation";
+    }
+
+    el.appendChild(chip);
+  });
+}
+
+function refreshAssigneeSelect() {
+  const sel = document.getElementById("i-assignee");
+  if (!sel) return; // Sécurité
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">— Assigné à —</option>` +
+    participants.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  if (cur) sel.value = cur;
+}
+
+// ── ITEMS ─────────────────────────────────────────────────────────────────────
+async function addItem() {
+  const name = document.getElementById("i-name").value.trim();
+  if (!name) return;
+  const payload = {
+    name,
+    quantity: document.getElementById("i-qty").value.trim(),
+    category: document.getElementById("i-cat").value,
+    assignee: parseInt(document.getElementById("i-assignee").value) || null,
+    done: false,
+  };
+  try {
+    const item = await api(`${API}/items/`, "POST", payload);
+    item.assignee_detail = participants.find(p => p.id === item.assignee) || null;
+    items.push(item);
+    document.getElementById("i-name").value = "";
+    document.getElementById("i-qty").value = "";
+    renderItems();
+    updateBadges();
+    toast(`"${item.name}" ajouté ✓`);
+  } catch(e) { toast("Erreur lors de l'ajout", true); }
+}
+
+async function toggleItem(id) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  try {
+    const updated = await api(`${API}/items/${id}/`, "PATCH", { done: !item.done });
+    item.done = updated.done;
+    renderItems();
+    updateBadges();
+  } catch(e) { toast("Erreur", true); }
+}
+
+async function deleteItem(id) {
+  try {
+    await api(`${API}/items/${id}/`, "DELETE");
+    items = items.filter(i => i.id !== id);
+    renderItems();
+    updateBadges();
+  } catch(e) { toast("Erreur", true); }
+}
+
+function setFilter(f, el) {
+  itemFilter = f;
+  document.querySelectorAll(".filter-pill").forEach(p => p.classList.remove("active"));
+  el.classList.add("active");
+  renderItems();
+}
+
+function renderItems() {
+  const list = document.getElementById("item-list");
+  list.innerHTML = "";
+  const filtered = items.filter(i => {
+    if (itemFilter === "todo") return !i.done;
+    if (itemFilter === "done") return i.done;
+    return true;
+  });
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty"><span class="icon">🛒</span>Aucun article ici.</div>`;
+    return;
+  }
+  filtered.forEach(item => {
+    const a = item.assignee_detail || participants.find(p => p.id === item.assignee);
+    const li = document.createElement("li");
+    li.className = "item-row" + (item.done ? " done" : "");
+    li.innerHTML = `
+      <div class="item-check ${item.done ? "checked" : ""}" onclick="toggleItem(${item.id})">${item.done ? "✓" : ""}</div>
+      <span class="item-name">${esc(item.name)}</span>
+      ${item.quantity ? `<span class="item-qty">${esc(item.quantity)}</span>` : ""}
+      <span class="cat-badge">${CAT_ICONS[item.category] || "📦"} ${CAT_LABELS[item.category] || ""}</span>
+      ${a ? `<span class="chip" style="font-size:0.74rem;padding:0.18rem 0.5rem;background:${a.color}20;border:1px solid ${a.color}55;color:${a.color}">${esc(a.name)}</span>` : ""}
+      <button class="btn btn-danger" onclick="deleteItem(${item.id})">✕</button>
+    `;
+    list.appendChild(li);
+  });
+}
+
+// ── EXPENSES ──────────────────────────────────────────────────────────────────
+function openExpenseModal() {
+  if (participants.length < 2) { toast("Ajoute au moins 2 participants", true); return; }
+  document.getElementById("exp-payer").innerHTML =
+    participants.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  const split = document.getElementById("exp-split");
+  split.innerHTML = "";
+  participants.forEach(p => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "split-chip selected";
+    chip.textContent = p.name;
+    chip.dataset.id = p.id;
+    chip.onclick = () => chip.classList.toggle("selected");
+    split.appendChild(chip);
+  });
+  document.getElementById("exp-label").value = "";
+  document.getElementById("exp-amount").value = "";
+  document.getElementById("exp-modal").classList.add("open");
+}
+
+function closeExpenseModal() { document.getElementById("exp-modal").classList.remove("open"); }
+
+async function saveExpense() {
+  const label = document.getElementById("exp-label").value.trim();
+  const amount = parseFloat(document.getElementById("exp-amount").value);
+  const payerId = parseInt(document.getElementById("exp-payer").value);
+  const splitIds = [...document.querySelectorAll("#exp-split .split-chip.selected")]
+    .map(c => parseInt(c.dataset.id));
+  if (!label || isNaN(amount) || amount <= 0 || !splitIds.length) {
+    toast("Remplis tous les champs", true); return;
+  }
+  try {
+    const exp = await api(`${API}/expenses/`, "POST", {
+      label, amount, payer: payerId, split_with: splitIds,
+    });
+    exp.payer_detail = participants.find(p => p.id === exp.payer) || null;
+    exp.split_with_details = splitIds.map(id => participants.find(p => p.id === id)).filter(Boolean);
+    expenses.push(exp);
+    closeExpenseModal();
+    renderExpenses();
+    updateBadges();
+    toast(`"${label}" enregistrée ✓`);
+  } catch(e) { toast("Erreur", true); }
+}
+
+async function deleteExpense(id) {
+  try {
+    await api(`${API}/expenses/${id}/`, "DELETE");
+    expenses = expenses.filter(e => e.id !== id);
+    renderExpenses();
+    updateBadges();
+  } catch(e) { toast("Erreur", true); }
+}
+
+function renderExpenses() {
+  const list = document.getElementById("expense-list");
+  if (!expenses.length) {
+    list.innerHTML = `<div class="empty"><span class="icon">💸</span>Aucune dépense enregistrée.</div>`;
+    return;
+  }
+  list.innerHTML = "";
+  expenses.forEach(exp => {
+    const payer = exp.payer_detail || participants.find(p => p.id === exp.payer);
+    const split = exp.split_with_details || [];
+    const perP = (parseFloat(exp.amount) / (split.length || 1)).toFixed(2);
+    const chips = split.map(p =>
+      `<span class="chip" style="font-size:0.7rem;padding:0.15rem 0.45rem;background:${p.color}20;border:1px solid ${p.color}50;color:${p.color}">${esc(p.name)}</span>`
+    ).join("");
+    const row = document.createElement("div");
+    row.className = "expense-row";
+    row.innerHTML = `
+      <div class="expense-amount"><sup>€</sup>${parseFloat(exp.amount).toFixed(2)}</div>
+      <div class="expense-info">
+        <div class="expense-label">${esc(exp.label)}</div>
+        <div class="expense-meta">
+          ${payer ? `<span style="color:${payer.color}">Payé par <strong>${esc(payer.name)}</strong></span> ·` : ""}
+          <span>${split.length} pers. · <strong>€${perP}/pers.</strong></span>
+        </div>
+        <div class="split-row">${chips}</div>
+      </div>
+      <button class="btn btn-danger" onclick="deleteExpense(${exp.id})">✕</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+// ── BALANCE ───────────────────────────────────────────────────────────────────
+async function loadBalance() {
+  try {
+    const data = await api(`${API}/balance/`);
+    // Balance cards
+    const grid = document.getElementById("balance-grid");
+    grid.innerHTML = "";
+    data.balances.forEach(b => {
+      const cls = b.net > 0.005 ? "pos" : b.net < -0.005 ? "neg" : "zero";
+      const sign = b.net > 0.005 ? "+" : "";
+      const lbl = cls === "pos" ? "à recevoir" : cls === "neg" ? "à rembourser" : "équilibré ✓";
+      const card = document.createElement("div");
+      card.className = "balance-card";
+      card.innerHTML = `
+        <div class="balance-name">${esc(b.name)}</div>
+        <div class="balance-amount ${cls}">${sign}${b.net.toFixed(2)} €</div>
+        <div class="balance-label">${lbl}</div>
+      `;
+      grid.appendChild(card);
+    });
+    // Settlements
+    const settDiv = document.getElementById("settlements");
+    settDiv.innerHTML = "";
+    if (!data.settlements.length) {
+      settDiv.innerHTML = `<div class="empty"><span class="icon">✅</span>Tout est à l'équilibre — personne ne doit rien !</div>`;
+    } else {
+      data.settlements.forEach(s => {
+        const row = document.createElement("div");
+        row.className = "settlement-row";
+        row.innerHTML = `
+          <span style="color:${s.from_color};font-weight:600">${esc(s.from_name)}</span>
+          <span class="settle-arrow">→</span>
+          <span style="color:${s.to_color};font-weight:600">${esc(s.to_name)}</span>
+          <span class="settle-amount">${s.amount.toFixed(2)} €</span>
+        `;
+        settDiv.appendChild(row);
+      });
+    }
+  } catch(e) { toast("Erreur de chargement de la balance", true); }
+}
+
+// Close modal on overlay click
+document.getElementById("exp-modal").addEventListener("click", function(e) {
+  if (e.target === this) closeExpenseModal();
+});
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kikoa — Mes événements</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFF6DE;
+    --surface: #FFE394;
+    --surface2: #f7e8c3;
+    --border: rgba(0,0,0,0.08);
+    --accent: #8BDFDD;
+    --accent2: #F48F68;
+    --text: #2D2D2D;
+    --muted: #6B6B6B;
+    --green: #56c479;
+    --red: #F48F68;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 10% 0%, rgba(139,223,221,0.15) 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 100%, rgba(244,143,104,0.1) 0%, transparent 50%);
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 0.6rem; }
+  .brand-logo {
+    width: 36px; height: 36px; background: var(--accent);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; box-shadow: 0 0 16px rgba(139,223,221,0.5);
+  }
+  .brand h1 { font-family: 'Syne', serif; font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; }
+  .brand h1 span { color: var(--accent); }
+  .user-pill {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 0.35rem 0.85rem; font-size: 0.82rem;
+  }
+  .user-pill a { color: var(--accent); text-decoration: none; }
+  .user-pill a:hover { text-decoration: underline; }
+
+  /* ── MAIN ── */
+  main { max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem; }
+
+  .page-header { margin-bottom: 2.5rem; }
+  .page-header h2 { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; margin-bottom: 0.35rem; }
+  .page-header p { color: var(--muted); font-size: 0.92rem; }
+
+  /* ── CREATE FORM ── */
+  .create-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+  .create-card h3 { font-size: 0.85rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+
+  .form-row { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+  .form-row:last-child { margin-bottom: 0; }
+
+  input[type="text"], input[type="date"], input[type="number"], select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.65rem 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    flex: 1;
+    min-width: 120px;
+  }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+
+  .emoji-input { flex: 0 0 70px; min-width: 70px; text-align: center; font-size: 1.2rem; }
+
+  .btn {
+    padding: 0.65rem 1.3rem;
+    border: none; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 0.35rem;
+  }
+  .btn-primary { background: var(--accent); color: var(--text); }
+  .btn-primary:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(139,223,221,0.5); }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.07); }
+  .btn-danger { background: rgba(224,96,96,0.12); color: var(--red); border: 1px solid rgba(224,96,96,0.2); padding: 0.35rem 0.7rem; font-size: 0.8rem; border-radius: 8px; }
+  .btn-danger:hover { background: rgba(224,96,96,0.25); }
+
+  /* ── EVENT CARDS ── */
+  .events-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .event-row { display: flex; align-items: center; gap: 0.5rem; }
+
+  .event-card {
+    flex: 1;
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    text-decoration: none; color: var(--text);
+    transition: all 0.2s;
+  }
+  .event-card:hover {
+    background: var(--surface2);
+    border-color: rgba(124,106,247,0.35);
+    transform: translateX(3px);
+  }
+  .event-emoji {
+    font-size: 1.6rem; width: 44px; height: 44px;
+    background: var(--surface2); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .event-info { flex: 1; min-width: 0; }
+  .event-name { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .event-meta { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
+  .event-arrow { color: var(--muted); font-size: 1.1rem; flex-shrink: 0; }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center; padding: 3.5rem 1rem;
+    color: var(--muted); line-height: 1.7;
+  }
+  .empty .icon { font-size: 3rem; display: block; margin-bottom: 0.75rem; }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 0.78rem; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 0.75rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-logo">🎯</div>
+    <h1>Ki<span>koa</span></h1>
+  </div>
+  <div class="user-pill">
+    👤 {{ request.user.username }}
+    &nbsp;·&nbsp;
+    <form method="post" action="{% url 'logout' %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" style="background:none; border:none; color:var(--accent); text-decoration:none; cursor:pointer; font-family:inherit; font-size:inherit; padding:0;">Déconnexion</button>
+    </form>
+  </div>
+</header>
+
+<main>
+  <div class="page-header">
+    <h2>Mes événements</h2>
+    <p>Organise les courses et les dépenses de tes weekends, sorties et soirées.</p>
+  </div>
+
+  <!-- Create form -->
+  <div class="create-card">
+    <h3>➕ Nouvel événement</h3>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-row">
+        <input class="emoji-input" type="text" name="emoji" placeholder="🎉" maxlength="4" value="🎉">
+        <input type="text" name="name" placeholder="Nom de l'événement (ex: Weekend ski, Apéro vendredi…)" required style="flex:3">
+        <input type="date" name="date" style="flex:1.2; min-width:140px">
+      </div>
+      <div class="form-row">
+        <input type="text" name="description" placeholder="Description optionnelle">
+        <button type="submit" class="btn btn-primary">Créer</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Events list -->
+  {% if events %}
+  <div class="section-label">{{ events|length }} événement{{ events|length|pluralize }}</div>
+  <div class="events-list">
+    {% for event in events %}
+    <div class="event-row">
+      <a href="{% url 'event_detail' event.pk %}" class="event-card">
+        <div class="event-emoji">{{ event.emoji }}</div>
+        <div class="event-info">
+          <div class="event-name">{{ event.name }}</div>
+          <div class="event-meta">
+            {% if event.date %}{{ event.date|date:"d/m/Y" }} · {% endif %}
+            {{ event.participants.count }} participant{{ event.participants.count|pluralize }}
+            · {{ event.items.count }} article{{ event.items.count|pluralize }}
+            · {{ event.expenses.count }} dépense{{ event.expenses.count|pluralize }}
+          </div>
+        </div>
+        <span class="event-arrow">›</span>
+      </a>
+      <form method="post" action="{% url 'event_delete' event.pk %}"
+            onsubmit="return confirm('Supprimer « {{ event.name }} » et toutes ses données ?')">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">🗑</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    <span class="icon">🗓️</span>
+    Aucun événement pour l'instant.<br>
+    Crée ton premier — BBQ, ski, voyage, apéro…
+  </div>
+  {% endif %}
+</main>
+
+</body>
+</html>
