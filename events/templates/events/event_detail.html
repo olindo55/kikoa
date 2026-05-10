@@ -1,30 +1,24 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kikoa — {{ event.name }}</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
 
-<header>
-  <a href="{% url 'event_list' %}" class="back-btn">← Mes événements</a>
+{% block title %}Kikoa — {{ event.name }}{% endblock %}
+
+
+{% block sub_header %}
+<div class="event-sub-header">
   <div class="header-title">
     <span class="event-emoji">{{ event.emoji }}</span>
-    <span id="header-event-name">{{ event.name }}</span>
+    <div style="display: flex; flex-direction: column;">
+      <span id="header-event-name">{{ event.name }}</span>
+      {% if event.description %}
+      <span class="event-description-sub">{{ event.description }}</span>
+      {% endif %}
+    </div>
   </div>
-  <div class="header-right">
-    {{ request.user.username }} · 
-    <form method="post" action="{% url 'logout' %}" style="display:inline;">
-      {% csrf_token %}
-      <button type="submit" style="background:none; border:none; color:var(--primary); text-decoration:none; cursor:pointer; font-family:inherit; font-size:inherit; padding:0;">Déconnexion</button>
-    </form>
-  </div>
-</header>
+</div>
+{% endblock %}
 
+{% block content %}
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('items', this)">
     🛒 Liste <span class="badge" id="bdg-i">0</span>
@@ -89,6 +83,13 @@
       <span class="filter-pill active" id="f-all" onclick="setFilter('all', this)">Tout</span>
       <span class="filter-pill" id="f-todo" onclick="setFilter('todo', this)">À faire</span>
       <span class="filter-pill" id="f-done" onclick="setFilter('done', this)">✓ Fait</span>
+      <span class="filter-pill" id="f-mine" onclick="setFilter('mine', this)">🙋 Pour moi</span>
+    </div>
+    <div class="filter-row" style="margin-top: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.8rem;">
+      <span style="font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-right: 0.4rem; align-self: center;">Trier par :</span>
+      <span class="filter-pill active" id="s-default" onclick="setSort('default', this)">Défaut</span>
+      <span class="filter-pill" id="s-cat" onclick="setSort('category', this)">Type</span>
+      <span class="filter-pill" id="s-assign" onclick="setSort('assignee', this)">Assigné</span>
     </div>
     <ul class="item-list" id="item-list"></ul>
   </div>
@@ -167,7 +168,9 @@
 
 <!-- ── TOAST ── -->
 <div class="toast" id="toast"></div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const EVENT_ID = {{ event.id }};
@@ -189,6 +192,7 @@ let participants = [];
 let items = [];
 let expenses = [];
 let itemFilter = "all";
+let itemSort = "default";
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -367,7 +371,14 @@ async function deleteItem(id) {
 
 function setFilter(f, el) {
   itemFilter = f;
-  document.querySelectorAll(".filter-pill").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll("[id^='f-']").forEach(p => p.classList.remove("active"));
+  el.classList.add("active");
+  renderItems();
+}
+
+function setSort(s, el) {
+  itemSort = s;
+  document.querySelectorAll("[id^='s-']").forEach(p => p.classList.remove("active"));
   el.classList.add("active");
   renderItems();
 }
@@ -375,11 +386,41 @@ function setFilter(f, el) {
 function renderItems() {
   const list = document.getElementById("item-list");
   list.innerHTML = "";
-  const filtered = items.filter(i => {
+  
+  // Get current user ID if linked to a participant
+  const myParticipant = participants.find(p => p.user);
+  const myId = myParticipant ? myParticipant.id : null;
+
+  let filtered = items.filter(i => {
     if (itemFilter === "todo") return !i.done;
     if (itemFilter === "done") return i.done;
+    if (itemFilter === "mine") return i.assignee === myId;
     return true;
   });
+
+  // Sort logic
+  filtered.sort((a, b) => {
+    // Primary sort: done status (always keep todo first unless specific sort?)
+    // Actually, usually it's better to keep todo first, but if sorting by cat/assignee, maybe we want to see everything grouped?
+    // Let's stick to "done at the end" as a global rule, then sub-sort.
+    if (a.done !== b.done) return a.done - b.done;
+
+    if (itemSort === "category") {
+      const catA = CAT_LABELS[a.category] || "";
+      const catB = CAT_LABELS[b.category] || "";
+      return catA.localeCompare(catB);
+    }
+    if (itemSort === "assignee") {
+      const pA = participants.find(p => p.id === a.assignee);
+      const pB = participants.find(p => p.id === b.assignee);
+      const nameA = pA ? pA.name : "zzz"; // Put unassigned at the end
+      const nameB = pB ? pB.name : "zzz";
+      return nameA.localeCompare(nameB);
+    }
+    // default: by creation date (implicitly in items array order usually, or we use created_at)
+    return new Date(a.created_at) - new Date(b.created_at);
+  });
+
   if (!filtered.length) {
     list.innerHTML = `<div class="empty"><span class="icon">🛒</span>Aucun article ici.</div>`;
     return;
@@ -390,8 +431,7 @@ function renderItems() {
     li.className = "item-row" + (item.done ? " done" : "");
     li.innerHTML = `
       <div class="item-check ${item.done ? "checked" : ""}" onclick="toggleItem(${item.id})">${item.done ? "✓" : ""}</div>
-      <span class="item-name">${esc(item.name)}</span>
-      ${item.quantity ? `<span class="item-qty">${esc(item.quantity)}</span>` : ""}
+      <span class="item-name">${esc(item.name)} ${item.quantity ? `<span class="item-qty">(${esc(item.quantity)})</span>` : ""}</span>
       <span class="cat-badge">${CAT_ICONS[item.category] || "📦"} ${CAT_LABELS[item.category] || ""}</span>
       ${a ? `<span class="chip" style="font-size:0.74rem;padding:0.18rem 0.5rem;background:${a.color}20;border:1px solid ${a.color}55;color:${a.color}">${esc(a.name)}</span>` : ""}
       <button class="btn btn-ghost" onclick="openItemModal(${item.id})" style="padding:0.2rem 0.4rem; font-size:0.7rem;">✏️</button>
@@ -589,5 +629,4 @@ document.getElementById("item-modal").addEventListener("click", function(e) {
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 init();
 </script>
-</body>
-</html>
+{% endblock %}

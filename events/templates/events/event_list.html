@@ -1,38 +1,75 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kikoa — Mes événements</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
 
-<header>
-  <div class="brand">
-    <div class="brand-logo">🎯</div>
-    <h1>Ki<span>koa</span></h1>
-  </div>
-  <div class="user-pill">
-    👤 {{ request.user.username }}
-    &nbsp;·&nbsp;
-    <form method="post" action="{% url 'logout' %}" style="display:inline;">
-      {% csrf_token %}
-      <button type="submit" style="background:none; border:none; color:var(--primary); text-decoration:none; cursor:pointer; font-family:inherit; font-size:inherit; padding:0;">Déconnexion</button>
-    </form>
-  </div>
-</header>
+{% block title %}Kikoa — Mes événements{% endblock %}
 
+{% block content %}
 <main>
   <div class="page-header">
     <h2>Mes événements</h2>
     <p>Organise les courses et les dépenses de tes weekends, sorties et soirées.</p>
   </div>
 
+  <!-- Events list -->
+  {% if events %}
+  <div class="section-label">{{ events|length }} événement{{ events|length|pluralize }}</div>
+  <div class="events-list">
+    {% for event in events %}
+    <div class="event-row">
+      <a href="{% url 'event_detail' event.pk %}" class="event-card">
+        <div class="event-emoji">{{ event.emoji }}</div>
+        <div class="event-info">
+          <div class="event-name">{{ event.name }}</div>
+          {% if event.description %}
+          <div class="event-description">{{ event.description }}</div>
+          {% endif %}
+          <div class="event-meta">
+            {% if event.date %}{{ event.date|date:"d/m/Y" }} · {% endif %}
+            {{ event.participants.count }} participant{{ event.participants.count|pluralize }}
+            · {{ event.items.count }} article{{ event.items.count|pluralize }}
+            · {{ event.expenses.count }} dépense{{ event.expenses.count|pluralize }}
+          </div>
+        </div>
+        <span class="event-arrow">›</span>
+      </a>
+      <button type="button" class="btn btn-danger" onclick="openDeleteModal({{ event.pk }}, '{{ event.name|escapejs }}')">🗑</button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+      <h2 style="color: var(--red);">⚠️ Supprimer l'événement ?</h2>
+      <p style="margin-bottom: 1.5rem; font-size: 0.9rem; line-height: 1.5;">
+        Cette action est irréversible. Toutes les dépenses, articles et participations liés à 
+        <strong id="delete-event-display-name"></strong> seront définitivement supprimés.
+      </p>
+      
+      <div class="field">
+        <label>Tape le nom de l'événement pour confirmer :</label>
+        <input type="text" id="delete-confirm-input" placeholder="Nom de l'événement" autocomplete="off">
+      </div>
+
+      <form id="delete-form" method="post" action="">
+        {% csrf_token %}
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" onclick="closeDeleteModal()">Annuler</button>
+          <button type="submit" id="delete-submit-btn" class="btn btn-danger" disabled>Supprimer définitivement</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty">
+    <span class="icon">🗓️</span>
+    Aucun événement pour l'instant.<br>
+    Crée ton premier — BBQ, ski, voyage, apéro…
+  </div>
+  {% endif %}
+
   <!-- Create form -->
-  <div class="create-card">
+  <div class="create-card" style="margin-top: 2rem;">
     <h3>➕ Nouvel événement</h3>
     <form method="post">
       {% csrf_token %}
@@ -47,42 +84,39 @@
       </div>
     </form>
   </div>
-
-  <!-- Events list -->
-  {% if events %}
-  <div class="section-label">{{ events|length }} événement{{ events|length|pluralize }}</div>
-  <div class="events-list">
-    {% for event in events %}
-    <div class="event-row">
-      <a href="{% url 'event_detail' event.pk %}" class="event-card">
-        <div class="event-emoji">{{ event.emoji }}</div>
-        <div class="event-info">
-          <div class="event-name">{{ event.name }}</div>
-          <div class="event-meta">
-            {% if event.date %}{{ event.date|date:"d/m/Y" }} · {% endif %}
-            {{ event.participants.count }} participant{{ event.participants.count|pluralize }}
-            · {{ event.items.count }} article{{ event.items.count|pluralize }}
-            · {{ event.expenses.count }} dépense{{ event.expenses.count|pluralize }}
-          </div>
-        </div>
-        <span class="event-arrow">›</span>
-      </a>
-      <form method="post" action="{% url 'event_delete' event.pk %}"
-            onsubmit="return confirm('Supprimer « {{ event.name }} » et toutes ses données ?')">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger">🗑</button>
-      </form>
-    </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="empty">
-    <span class="icon">🗓️</span>
-    Aucun événement pour l'instant.<br>
-    Crée ton premier — BBQ, ski, voyage, apéro…
-  </div>
-  {% endif %}
 </main>
+{% endblock %}
 
-</body>
-</html>
+{% block extra_js %}
+<script>
+let eventToDeleteName = "";
+const deleteModal = document.getElementById('delete-modal');
+const deleteInput = document.getElementById('delete-confirm-input');
+const deleteSubmitBtn = document.getElementById('delete-submit-btn');
+const deleteForm = document.getElementById('delete-form');
+const deleteDisplayName = document.getElementById('delete-event-display-name');
+
+function openDeleteModal(id, name) {
+    eventToDeleteName = name;
+    deleteDisplayName.textContent = `« ${name} »`;
+    deleteForm.action = `/events/${id}/delete/`;
+    deleteInput.value = "";
+    deleteSubmitBtn.disabled = true;
+    deleteModal.classList.add('open');
+    setTimeout(() => deleteInput.focus(), 100);
+}
+
+function closeDeleteModal() {
+    deleteModal.classList.remove('open');
+}
+
+deleteInput.addEventListener('input', () => {
+    deleteSubmitBtn.disabled = deleteInput.value !== eventToDeleteName;
+});
+
+// Close modal on overlay click
+deleteModal.addEventListener('click', (e) => {
+    if (e.target === deleteModal) closeDeleteModal();
+});
+</script>
+{% endblock %}

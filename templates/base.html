@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Kikoa{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<header>
+  <div class="header-left header-left-mobile">
+    <a href="{% url 'event_list' %}" class="brand">
+      <div class="brand-logo">
+        <img src="{% static 'images/logo.png' %}" alt="Kikoa Logo">
+      </div>
+    </a>
+    {% block header_left %}{% endblock %}
+  </div>
+
+  <div class="header-right-desktop">
+  </div>
+  
+  {% if user.is_authenticated %}
+  <button class="burger-btn" onclick="toggleMenu()">☰</button>
+  
+  <div class="mobile-menu" id="mobile-menu">
+    <div class="mobile-menu-content">
+      <div class="mobile-menu-header">
+        <div class="user-info">👤 {{ request.user.username }}</div>
+        <button class="close-menu" onclick="toggleMenu()">✕</button>
+      </div>
+      <nav>
+        <a href="{% url 'event_list' %}" class="mobile-nav-link">🏠 Mes événements</a>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="mobile-nav-link logout-btn">🚪 Déconnexion</button>
+        </form>
+      </nav>
+    </div>
+  </div>
+  {% endif %}
+</header>
+
+{% block sub_header %}{% endblock %}
+
+{% block content %}{% endblock %}
+
+<script>
+function toggleMenu() {
+  const menu = document.getElementById("mobile-menu");
+  if (menu) menu.classList.toggle("open");
+}
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,19 +1,15 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kikoa — Inscription</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
 
+{% block title %}Kikoa — Inscription{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
 <div class="login-box">
-  <div class="brand">
-    <div class="brand-logo">🎯</div>
-    <h1>Ki<span>oa</span></h1>
+  <div class="brand" style="justify-content: center; margin-bottom: 2rem;">
+    <div class="brand-logo" style="height: 60px;">
+      <img src="{% static 'images/logo.png' %}" alt="Kikoa Logo">
+    </div>
   </div>
 
   <h2>Inscription</h2>
@@ -42,6 +38,5 @@
 
   <p class="footer-note">Déjà un compte ? <a href="{% url 'login' %}">Connecte-toi</a>.</p>
 </div>
-
-</body>
-</html>
+</div>
+{% endblock %}
