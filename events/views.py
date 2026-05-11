@@ -139,7 +139,7 @@ class ParticipantViewSet(viewsets.ModelViewSet):
         event = get_object_or_404(
             Event.objects.filter(
                 models.Q(owner=self.request.user) | models.Q(participants__user=self.request.user)
-            ),
+            ).distinct(),
             pk=self.kwargs["event_pk"]
         )
         serializer.save(event=event)
@@ -162,7 +162,7 @@ class ShoppingItemViewSet(viewsets.ModelViewSet):
         event = get_object_or_404(
             Event.objects.filter(
                 models.Q(owner=self.request.user) | models.Q(participants__user=self.request.user)
-            ),
+            ).distinct(),
             pk=self.kwargs["event_pk"]
         )
         serializer.save(event=event)
@@ -185,7 +185,7 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         event = get_object_or_404(
             Event.objects.filter(
                 models.Q(owner=self.request.user) | models.Q(participants__user=self.request.user)
-            ),
+            ).distinct(),
             pk=self.kwargs["event_pk"]
         )
         serializer.save(event=event)
